@@ -1,6 +1,6 @@
 {
   "name": "mangle-css-class-webpack-plugin-xpc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "mangle css webpack",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
