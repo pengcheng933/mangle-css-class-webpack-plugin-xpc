@@ -1,0 +1,9 @@
+# 不需要上传到 npm 的文件和文件夹
+rollup.config.js
+webpack.config.js
+src/
+.gitignorepnpm-lock.yaml
+README.md
+.git/
+node_modules/
+test

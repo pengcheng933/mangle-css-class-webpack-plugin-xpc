@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const optimizer = require("./optimizer");
 const ClassGenerator = require("./classGenerator");
+const traverseDirectory = require("./addClassPre");
 
 const runner = (compiler, compilation, opts, classGenerator) => {
   const optimize = optimizer(compiler, compilation, opts, classGenerator);
@@ -41,7 +42,6 @@ const gettingCache = () => {
     });
   });
 };
-let index = 0;
 class Plugin {
   constructor(opts = {}) {
     this.opts = opts;
@@ -54,6 +54,11 @@ class Plugin {
         compilation.hooks.optimizeChunkAssets.tapAsync(
           "MangleCssClassPluginOptimizeChunkAssetsHooks",
           async (assets, callback) => {
+            if (this.opts.replacePath) {
+              // 有替换路劲执行替换操作
+              await traverseDirectory(this.opts.replacePath);
+            }
+
             if (!classGenerator) {
               classGenerator = new ClassGenerator();
               await detectingExistenceFile(cachePath);
@@ -89,11 +94,6 @@ class Plugin {
     compiler.hooks.afterEmit.tapAsync(
       "SaveDataPlugin",
       (compilation, callback) => {
-        if (!index) {
-          index++;
-          callback();
-          return;
-        }
         const cacheObj = classGenerator.newClassMap;
         for (const key in cacheObj) {
           if (cacheObj[key].num <= 0) {

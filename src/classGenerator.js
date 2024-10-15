@@ -93,7 +93,6 @@ ClassGenerator.prototype = {
     const newClass = {
       name: newClassName,
       num: 1,
-      // usedBy: []
     };
     this.newClassMap[original] = newClass;
     return newClass;
