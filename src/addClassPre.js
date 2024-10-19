@@ -13,7 +13,7 @@ const noDirectoryReplacement = [
   "store",
 ];
 
-function processTemplate(templateStr) {
+function processTemplate(templateStr, nameSubstitutionPrefix) {
   // 处理HTML中 class="x y z" 的情况
   //   const classPattern = /class="([^"]+)"/g
   const classPattern = /(?<!:|-)class="([^"]+)"/g;
@@ -23,8 +23,11 @@ function processTemplate(templateStr) {
       .split(/\s+/) // 按空格分隔多个类名
       .map((className) => {
         // 只为不以 'cl-' 或 'no-' 开头的类名加上 'cl-'
-        if (!className.startsWith("cl-") && !className.startsWith("no-")) {
-          return `cl-${className}`;
+        if (
+          !className.startsWith(nameSubstitutionPrefix) &&
+          !className.startsWith("no-")
+        ) {
+          return `${nameSubstitutionPrefix}${className}`;
         }
         return className;
       })
@@ -40,37 +43,42 @@ function processTemplate(templateStr) {
   return templateStr;
 }
 
-function addClassPre(fullPath, data) {
+function addClassPre(fullPath, data, nameSubstitutionPrefix) {
   // x都是字符串和数字和-和_ 也就是遵循类命名方式
   // 找到class="x"中间的值然后加前缀为为class="o-x"
   // 找到.x {中间的值然后加前缀为.o-x {
   // 如果是以o-开头那么久不替换了,保持原样 如果是 no-开头的也不替换
   return new Promise((resolve) => {
-    fs.writeFile(fullPath, processTemplate(data), "utf8", (err) => {
-      if (err) {
-        console.log("写入失败", err);
-        return;
+    fs.writeFile(
+      fullPath,
+      processTemplate(data, nameSubstitutionPrefix),
+      "utf8",
+      (err) => {
+        if (err) {
+          console.log("写入失败", err);
+          return;
+        }
+        console.log("写入成功");
+        resolve();
       }
-      console.log("写入成功");
-      resolve();
-    });
+    );
   });
 }
 
-function traverseDirectory(replaceFile) {
+function traverseDirectory(replaceFile, nameSubstitutionPrefix = "cl-") {
   const fullPath = path.resolve(pwdPath, replaceFile);
   const fileStat = fs.statSync(fullPath);
   if (fileStat.isFile) {
     fs.readFile(fullPath, "utf8", (err, data) => {
       if (err) return;
-      return addClassPre(fullPath, data);
+      return addClassPre(fullPath, data, nameSubstitutionPrefix);
     });
   }
   // 读取当前目录下的所有文件和文件夹
-  return traverseDirectoryFun(fullPath);
+  return traverseDirectoryFun(fullPath, nameSubstitutionPrefix);
 }
 
-function traverseDirectoryFun(replaceFile) {
+function traverseDirectoryFun(replaceFile, nameSubstitutionPrefix) {
   return new Promise((resolve) => {
     fs.readdir(replaceFile, (err, files) => {
       if (err) {
@@ -97,7 +105,7 @@ function traverseDirectoryFun(replaceFile) {
           if (stats.isDirectory()) {
             // 如果是目录，递归调用
             //   console.log(`目录: ${fullPath}`)
-            await traverseDirectoryFun(fullPath); // 递归调用
+            await traverseDirectoryFun(fullPath, nameSubstitutionPrefix); // 递归调用
           } else {
             // 如果是文件，输出文件路径
             //   console.log(`文件: ${fullPath}`)
@@ -105,7 +113,7 @@ function traverseDirectoryFun(replaceFile) {
             if (fullPath.endsWith(".vue") || fullPath.endsWith(".less")) {
               fs.readFile(fullPath, "utf8", async (err, data) => {
                 if (err) return;
-                await addClassPre(fullPath, data);
+                await addClassPre(fullPath, data, nameSubstitutionPrefix);
               });
             }
             resolve();

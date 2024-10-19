@@ -56,7 +56,10 @@ class Plugin {
           async (assets, callback) => {
             if (this.opts.replacePath) {
               // 有替换路劲执行替换操作
-              await traverseDirectory(this.opts.replacePath);
+              await traverseDirectory(
+                this.opts.replacePath,
+                this.opts.nameSubstitutionPrefix
+              );
             }
 
             if (!classGenerator) {
